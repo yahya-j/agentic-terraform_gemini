@@ -416,3 +416,48 @@ EOF
 
 python test_pseudorag.py
 Ce test ne fait aucun appel API — uniquement du TF-IDF local, donc gratuit et instantané. Il vérifie que chaque prompt déclenche bien le bon bloc provider.
+########################################################################################################################################################
+Prompt: Deploy a VM on OVH Cloud in Strasbourg
+→ terraform {
+  required_providers {
+    ovh = {
+      source  = "ovh/ovh"
+      version = "~> 0.34"
+    }
+  }
+}
+
+provider "ovh" {
+  endpoint = "ovh-eu"
+}
+
+Prompt: Create a Kubernetes cluster on OVHcloud
+→ terraform {
+  required_providers {
+    ovh = {
+      source  = "ovh/ovh"
+      version = "~> 0.34"
+    }
+  }
+}
+
+provider "ovh" {
+  endpoint = "ovh-eu"
+}
+
+Prompt: Spin up a GCP Compute Engine instance
+→ provider "google" {
+  project = "my-project-id"
+  region  = "europe-west1"
+}
+
+Prompt: Deploy 3 VMs on Azure
+→ provider "azurerm" {
+  features {}
+}
+
+Prompt: Create an S3 bucket on AWS
+→ provider "aws" {
+  region = "eu-west-3"
+}
+
