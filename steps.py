@@ -304,6 +304,44 @@ class FewShot:
                 '}'
             ),
         },
+        {
+            "role": "user",
+            "content": "Deploy a single VM on OVH Cloud with 4GB RAM in Gravelines.",
+        },
+        {
+            "role": "assistant",
+            "content": (
+                'terraform {\n'
+                '  required_providers {\n'
+                '    ovh = {\n'
+                '      source  = "ovh/ovh"\n'
+                '      version = "~> 2.0"\n'
+                '    }\n'
+                '  }\n'
+                '}\n\n'
+                'provider "ovh" {\n'
+                '  endpoint = "ovh-eu"\n'
+                '}\n\n'
+                'resource "ovh_cloud_project_instance" "vm" {\n'
+                '  service_name   = "your_ovh_cloud_project_id"\n'
+                '  name           = "my-ovh-vm"\n'
+                '  region         = "GRA"\n'
+                '  billing_period = "hourly"\n\n'
+                '  boot_from {\n'
+                '    image_id = "UUID_OF_UBUNTU_IMAGE"\n'
+                '  }\n\n'
+                '  flavor {\n'
+                '    flavor_id = "UUID_OF_FLAVOR"\n'
+                '  }\n\n'
+                '  ssh_key {\n'
+                '    name = "my-ssh-key"\n'
+                '  }\n\n'
+                '  network {\n'
+                '    public = true\n'
+                '  }\n'
+                '}'
+            ),
+        },
     ]
 
     def get_messages(self, messages, _, meta):
