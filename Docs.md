@@ -462,7 +462,10 @@ Prompt: Create an S3 bucket on AWS
 }
 
 ###########################################################################################################################################""
-# 
+# Étape 3 — Test bout en bout avec un vrai appel LLM
+Changez temporairement le prompt :
+user_prompt = "Deploy a single VM on OVH Cloud with 4GB RAM in the Gravelines datacenter"
+
 [SecurityValidator] Aucun problème de sécurité détecté.
 [TerraformValidator] Tentative 1/6
 [TerraformValidator] terraform validate a échoué :
