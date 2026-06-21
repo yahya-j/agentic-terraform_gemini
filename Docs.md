@@ -530,6 +530,14 @@ resource "ovh_cloud_project_instance_v2" "example_vm" {
 }
 
 ########
+Le modèle oscille entre deux noms inventés (ovh_cloud_project_instance et sa variante _v2) 
+La vraie cause : ovh_cloud_project_instance existe bel et bien
+Le registre indique que la version actuelle du provider OVH est 2.14.0 — très loin de la ~> 0.34 qu'on avait mise dans notre "block" OVH ! 
+Cette contrainte ~> 0.34 était une supposition de ma part lors de la construction initiale du dictionnaire, et elle est obsolète/incorrecte. 
+C'est ça qui bloque terraform init côté disponibilité de ressources : la version 0.34.x du provider ne contenait probablement pas encore ovh_cloud_project_instance 
+(ressource marquée comme utilisant une API Beta). Firefly
+Le vrai fix — corriger la contrainte de version dans PseudoRAG
+#########
 [SecurityValidator] Aucun problème de sécurité détecté.
 [TerraformValidator] Tentative 1/6
 [TerraformValidator] terraform validate a échoué :
@@ -628,3 +636,58 @@ resource "ovh_cloud_project_instance" "vm" {
   key_pair_name = ovh_cloud_project_ssh_key.my_generated_key.name
   */
 }
+##################################
+Bonne progression — la version ~> 2.0 a réglé le problème initial (la ressource ovh_cloud_project_instance est maintenant reconnue), 
+mais on tombe sur une nouvelle vague d'erreurs en cascade, toutes liées à la même cause racine. C'est un excellent cas d'étude sur les limites de la boucle de retry 
+face à un schéma de provider mal connu du modèle.
+Décortiquons la cascade d'erreurs : Le vrai problème de fond, visible dans le code final
+flavor_id = data.ovh_cloud_project_flavor.b2_7_flavor.id
+image_id  = data.ovh_cloud_project_image.ubuntu_22_04.id
+
+D'après la doc qu'on a consultée, la vraie syntaxe de ovh_cloud_project_instance utilise des blocs imbriqués boot_from { image_id = "UUID" } et flavor { flavor_id = "UUID" } — pas des arguments racine image_id/flavor_id directement sur la ressource. Le modèle a inventé une structure plus simple (arguments plats) qui ressemble à ce qu'on voit sur AWS/Azure, mais qui ne correspond pas au schéma réel d'OVH. 
+C'est exactement le type d'hallucination par "généralisation excessive" qu'on anticipait : le modèle applique un pattern familier (Azure/AWS) à un provider qu'il connaît mal. GitHub
+Pourquoi la boucle ne peut pas s'auto-corriger ici
+Les messages d'erreur Terraform ("argument id is required") sont trompeurs pour le modèle : ils ne disent pas "tu utilises le mauvais nom de champ", ils disent juste "il manque un champ obligatoire" — 
+donc le modèle ajoute des champs au lieu de restructurer en blocs imbriqués. C'est une limite réelle de terraform validate comme mécanisme de feedback : il signale des champs manquants, pas des erreurs de structure conceptuelle.
+La solution : enrichir le few-shot avec le vrai pattern OVH
+Exactement comme on l'avait fait pour Azure/SSH, il faut donner un exemple de référence correct :
+{
+    "role": "user",
+    "content": "Deploy a single VM on OVH Cloud with 4GB RAM in Gravelines.",
+},
+{
+    "role": "assistant",
+    "content": (
+        'terraform {\n'
+        '  required_providers {\n'
+        '    ovh = {\n'
+        '      source  = "ovh/ovh"\n'
+        '      version = "~> 2.0"\n'
+        '    }\n'
+        '  }\n'
+        '}\n\n'
+        'provider "ovh" {\n'
+        '  endpoint = "ovh-eu"\n'
+        '}\n\n'
+        'resource "ovh_cloud_project_instance" "vm" {\n'
+        '  service_name   = "your_ovh_cloud_project_id"\n'
+        '  name           = "my-ovh-vm"\n'
+        '  region         = "GRA"\n'
+        '  billing_period = "hourly"\n\n'
+        '  boot_from {\n'
+        '    image_id = "UUID_OF_UBUNTU_IMAGE"\n'
+        '  }\n\n'
+        '  flavor {\n'
+        '    flavor_id = "UUID_OF_FLAVOR"\n'
+        '  }\n\n'
+        '  ssh_key {\n'
+        '    name = "my-ssh-key"\n'
+        '  }\n\n'
+        '  network {\n'
+        '    public = true\n'
+        '  }\n'
+        '}'
+    ),
+},
+
+
