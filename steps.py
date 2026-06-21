@@ -218,7 +218,7 @@ class PseudoRAG:
             "provider": [],
         }
 
-        for _, provider in self.terraform_providers.items():
+        for key, provider in self.terraform_providers.items():
             for keyword in provider["keywords"]:
                 self.corpus["data"].append(keyword.lower())
                 self.corpus["provider"].append(key)
