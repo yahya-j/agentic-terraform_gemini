@@ -363,7 +363,3 @@ class LLMClient:
             False,
             meta,
         )
-            messages + [{"role": "assistant", "content": completion.choices[0].message.content}],
-            False,
-            meta,
-        )
