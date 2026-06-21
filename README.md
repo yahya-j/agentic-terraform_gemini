@@ -146,6 +146,26 @@ uvicorn api:app --reload --port 8000
 Dans un second terminal (laissez le premier tourner) :
 curl http://localhost:8000/health =====>>>> Vous devriez voir : {"status":"ok"}
 
+## Étape 5 — Construire la page front-end
+Maintenant la partie visible : une page HTML simple avec un champ de saisie, un bouton, et l'affichage du résultat en code coloré.
+
+###Ce que cette page fait
+Un champ de texte pour décrire votre infrastructure
+3 boutons d'exemples cliquables (Azure, AWS, OVH) pour tester rapidement
+Un bouton "Générer" qui appelle votre API back-end (http://localhost:8000/generate)
+Le résultat s'affiche en code coloré, avec un bouton "Copier"
+Ctrl+Entrée comme raccourci pour générer sans cliquer
+
+## Étape 6 — Ouvrir la page dans votre navigateur
+Le serveur back-end doit toujours tourner dans votre premier terminal WSL. 
+Ouvrez simplement le fichier HTML directement depuis l'explorateur Windows (double-clic), 
+ou récupérez son chemin Windows depuis WSL :
+         wslpath -w ~/projets/agentic-terraform_gemini/index.html
+Copiez le chemin affiché et collez-le dans la barre d'adresse de votre navigateur (Chrome, Edge...).
+Vérifiez d'abord que le serveur back-end tourne toujours (uvicorn api:app --reload --port 8000 dans l'autre terminal), puis ouvrez la page 
+et testez avec un des exemples. Dites-moi ce qui se passe — si le bouton "Générer" déclenche bien un appel et affiche un résultat, 
+ou si vous tombez sur une erreur (souvent liée à CORS ou au serveur non démarré).
+
 ## Licence
 
 Licensed under the [Mozilla Public License 2.0 (MPL-2.0)](https://www.mozilla.org/en-US/MPL/2.0/).
