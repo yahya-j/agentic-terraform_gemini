@@ -5,8 +5,8 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # ==============================================================================
 
-# import anthropic
-import groq
+# import gemini
+from google import genai
 from pipeline import Pipeline
 from steps import FewShot, LLMClient, PseudoRAG, SecurityValidator, TerraformValidator, UserPrompt
 
@@ -14,17 +14,17 @@ from steps import FewShot, LLMClient, PseudoRAG, SecurityValidator, TerraformVal
 # model_name = "claude-3- 5-haiku-latest"
 # llm_client = anthropic.Anthropic()
 
-model_name = "llama-3.3-70b-versatile"
-llm_client = groq.Groq()   # lit GROQ_API_KEY depuis l'env automatiquement
+model_name = "gemini-2.5-flash"
+llm_client = genai.Client()   # lit GEMINI_API_KEY automatiquement depuis l'env
 
-user_prompt = "Deploy 3 VMs with at least 16 CPUs and 64GB across in 3 availability zones in the Netherlands using Azure"
+user_prompt = "Deploy 3 VMs with at least 16 CPUs and 64GB across 3 AZs in Netherlands using Azure"
 
 steps = [
     FewShot(),
     UserPrompt(),
     PseudoRAG(),
     LLMClient(llm_client, model_name),
-    SecurityValidator(), 
+    SecurityValidator(),
     TerraformValidator(),
 ]
 
