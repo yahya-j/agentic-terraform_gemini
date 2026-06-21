@@ -69,14 +69,10 @@ def generate(request: GenerateRequest):
 
     try:
         result = pipeline.run(request.prompt)
-        last_code = next(
-            (m["content"] for m in reversed(result) if m["role"] == "assistant"),
-            "",
-        )
         save_run(run_dir, request.prompt, last_code, success=True)
         return GenerateResponse(
             success=True,
-            terraform_code=last_code,
+            terraform_code=result,
             run_id=run_id,
             message="Code Terraform généré et validé avec succès.",
         )
