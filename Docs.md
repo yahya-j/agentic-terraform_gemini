@@ -288,4 +288,93 @@ Tokens utilisés : cache_tokens_details=None cached_content_token_count=None can
   modality=<MediaModality.TEXT: 'TEXT'>,
   token_count=33
 )] thoughts_token_count=2996 tool_use_prompt_token_count=None tool_use_prompt_tokens_details=None total_token_count=5741 traffic_type=None
-(venv) janna@DESKTOP-PHDEMI5:/mnt/c/Users/jann
+
+######################################################################################################################################################""
+# Résultat Main.py
+
+[SecurityValidator] Aucun problème de sécurité détecté.
+[TerraformValidator] Tentative 1/6
+[TerraformValidator] Code Terraform valide !
+
+                    provider "azurerm" {
+                        features {}
+                    }
+
+                    resource "azurerm_resource_group" "rg" {
+                        name     = "vms-rg"
+                        location = "westeurope"
+                    }
+
+                    resource "azurerm_virtual_network" "vnet" {
+                        name                = "vms-vnet"
+                        resource_group_name = azurerm_resource_group.rg.name
+                        location            = azurerm_resource_group.rg.location
+                        address_space       = ["10.0.0.0/16"]
+                    }
+
+                    resource "azurerm_subnet" "subnet" {
+                        name                 = "vms-subnet"
+                        resource_group_name  = azurerm_resource_group.rg.name
+                        virtual_network_name = azurerm_virtual_network.vnet.name
+                        address_prefixes     = ["10.0.1.0/24"]
+                    }
+
+                    resource "azurerm_public_ip" "public_ip" {
+                        count               = 3
+                        name                = "vm-public-ip-${count.index}"
+                        resource_group_name = azurerm_resource_group.rg.name
+                        location            = azurerm_resource_group.rg.location
+                        allocation_method   = "Static"
+                        sku                 = "Standard"
+                        zones               = [count.index + 1]
+                    }
+
+                    resource "azurerm_network_interface" "nic" {
+                        count               = 3
+                        name                = "vm-nic-${count.index}"
+                        resource_group_name = azurerm_resource_group.rg.name
+                        location            = azurerm_resource_group.rg.location
+                        ip_configuration {
+                            name                          = "internal"
+                            subnet_id                     = azurerm_subnet.subnet.id
+                            private_ip_address_allocation = "Dynamic"
+                            public_ip_address_id          = azurerm_public_ip.public_ip[count.index].id
+                        }
+                    }
+
+                    resource "azurerm_linux_virtual_machine" "vm" {
+                        count               = 3
+                        name                = "vm-${count.index}"
+                        resource_group_name = azurerm_resource_group.rg.name
+                        location            = azurerm_resource_group.rg.location
+                        size                = "Standard_E16s_v5" # 16 vCPUs, 128 GiB RAM
+                        admin_username      = "adminuser"
+                        network_interface_ids = [azurerm_network_interface.nic[count.index].id]
+                        zone                = "${count.index + 1}"
+
+                        admin_ssh_key {
+                            username   = "adminuser"
+                            public_key = tls_private_key.ssh_key.public_key_openssh
+                        }
+
+                        os_disk {
+                            caching              = "ReadWrite"
+                            storage_account_type = "Standard_LRS"
+                        }
+
+                        source_image_reference {
+                            publisher = "Canonical"
+                            offer     = "0001-com-ubuntu-server-jammy"
+                            sku       = "22_04-lts"
+                            version   = "latest"
+                        }
+                    }
+
+                    resource "tls_private_key" "ssh_key" {
+                        algorithm = "RSA"
+                        rsa_bits  = 4096
+                    }
+
+                    output "public_ips" {
+                        value = azurerm_public_ip.public_ip[*].ip_address
+                    }
