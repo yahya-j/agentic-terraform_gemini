@@ -341,9 +341,12 @@ class LLMClient:
 
     def get_messages(self, messages, _, meta):
         system_instruction = (
-            "You are a Terraform code generator. Respond with raw HCL code only. "
-            "Never include markdown formatting, explanations, comments about your "
-            "changes, or notes. Output only valid .tf file content."
+            "You are a Terraform HCL code generator. Output ONLY raw Terraform HCL "
+            "(.tf file syntax) — never Pulumi, never CloudFormation, never ARM "
+            "templates, never any other IaC tool. Never include markdown formatting, "
+            "explanations, prerequisites, deployment steps, or comments about your "
+            "changes. Output must start directly with HCL code (e.g. 'resource' or "
+            "'provider' block) and contain nothing else."
         )
 
         response = self.llm_client.models.generate_content(
