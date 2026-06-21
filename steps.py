@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 import re
 
+from google.genai import types
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -327,23 +328,38 @@ class LLMClient:
         self.llm_client = llm_client
         self.model_name = model_name
 
+    def _to_gemini_contents(self, messages):
+        """Convertit le format {'role': 'user'/'assistant', 'content': str}
+        utilisé par le pipeline vers le format attendu par l'API Gemini."""
+        contents = []
+        for msg in messages:
+            role = "model" if msg["role"] == "assistant" else "user"
+            contents.append(
+                types.Content(role=role, parts=[types.Part.from_text(text=msg["content"])])
+            )
+        return contents
+
     def get_messages(self, messages, _, meta):
-        completion = self.llm_client.chat.completions.create(
-            max_tokens=1024, 
-            model=self.model_name, 
-            messages=[
-            {
-                "role": "system",
-                "content": (
-                    "You are a Terraform code generator. Respond with raw HCL code only. "
-                    "Never include markdown formatting, explanations, comments about your "
-                    "changes, or notes. Output only valid .tf file content."
-                )
-            }
-        ] + messages,
+        system_instruction = (
+            "You are a Terraform code generator. Respond with raw HCL code only. "
+            "Never include markdown formatting, explanations, comments about your "
+            "changes, or notes. Output only valid .tf file content."
+        )
+
+        response = self.llm_client.models.generate_content(
+            model=self.model_name,
+            contents=self._to_gemini_contents(messages),
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                max_output_tokens=1024,
+            ),
         )
 
         return (
+            messages + [{"role": "assistant", "content": response.text}],
+            False,
+            meta,
+        )
             messages + [{"role": "assistant", "content": completion.choices[0].message.content}],
             False,
             meta,
