@@ -17,7 +17,8 @@ from steps import FewShot, LLMClient, PseudoRAG, SecurityValidator, TerraformVal
 model_name = "gemini-2.5-flash"
 llm_client = genai.Client()   # lit GEMINI_API_KEY automatiquement depuis l'env
 
-user_prompt = "Deploy 3 VMs with at least 16 CPUs and 64GB across 3 AZs in Netherlands using Azure"
+#user_prompt = "Deploy 3 VMs with at least 16 CPUs and 64GB across 3 AZs in Netherlands using Azure"
+user_prompt = "Deploy a single VM on OVH Cloud with 4GB RAM in the Gravelines datacenter"
 
 steps = [
     FewShot(),
