@@ -461,3 +461,67 @@ Prompt: Create an S3 bucket on AWS
   region = "eu-west-3"
 }
 
+###########################################################################################################################################""
+# 
+[SecurityValidator] Aucun problème de sécurité détecté.
+[TerraformValidator] Tentative 1/6
+[TerraformValidator] terraform validate a échoué :
+The provider ovh/ovh does not support resource type "ovh_cloud_project_instance".
+[SecurityValidator] Aucun problème de sécurité détecté.
+[TerraformValidator] Tentative 2/6
+[TerraformValidator] terraform validate a échoué :
+The provider ovh/ovh does not support resource type "ovh_cloud_project_instance_v2".
+[SecurityValidator] Aucun problème de sécurité détecté.
+[TerraformValidator] Tentative 3/6
+[TerraformValidator] terraform validate a échoué :
+The provider ovh/ovh does not support resource type "ovh_cloud_project_instance".
+[SecurityValidator] Aucun problème de sécurité détecté.
+[TerraformValidator] Tentative 4/6
+[TerraformValidator] terraform validate a échoué :
+The provider ovh/ovh does not support data source "ovh_cloud_project_image".
+[SecurityValidator] Aucun problème de sécurité détecté.
+[TerraformValidator] Tentative 5/6
+[TerraformValidator] terraform validate a échoué :
+The provider ovh/ovh does not support resource type "ovh_cloud_project_instance".
+[SecurityValidator] Aucun problème de sécurité détecté.
+[TerraformValidator] Tentative 6/6
+[TerraformValidator] Nombre max de retries atteint. Abandon.
+=== Dernier Code généré ===
+terraform {
+  required_providers {
+    ovh = {
+      source  = "ovh/ovh"
+      version = "~> 0.34"
+    }
+  }
+}
+
+provider "ovh" {
+  endpoint = "ovh-eu"
+}
+
+# Data source to get the OVH Cloud Project
+data "ovh_cloud_project" "my_project" {
+  service_name = "your_ovh_cloud_project_id" # Replace with your OVH Cloud Project ID
+}
+
+# Data source to get the desired flavor (s1-2 for 4GB RAM)
+data "ovh_cloud_project_flavor" "s1_2_flavor" {
+  service_name = data.ovh_cloud_project.my_project.service_name
+  region       = "GRA"
+  name         = "s1-2" # This flavor provides 4GB RAM
+}
+
+# Resource to deploy the instance
+resource "ovh_cloud_project_instance_v2" "example_vm" {
+  service_name = data.ovh_cloud_project.my_project.service_name
+  name         = "my-ovh-vm"
+  region       = "GRA"
+  flavor_name  = data.ovh_cloud_project_flavor.s1_2_flavor.name
+  image_name   = "Ubuntu 22.04" # Use image_name directly
+  # Make sure "Ubuntu 22.04" is the exact name of the image in your OVH region.
+  # You might need to check the OVH UI or CLI for exact image names.
+
+  # Optional: For SSH key authentication
+  # ssh_key_id = "your_ssh_key_id" # Replace with an existing SSH key ID in your project or create one with ovh_cloud_project_ssh_key
+}
