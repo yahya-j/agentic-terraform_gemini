@@ -179,24 +179,35 @@ class PseudoRAG:
     terraform_providers = {
         "azure": {
             "name": "azurerm",
-            "keywords": [
-                "azure",
-            ],
+            "keywords": ["azure", "microsoft azure"],
+            "block": 'provider "azurerm" {\n  features {}\n}',
         },
         "aws": {
             "name": "aws",
-            "keywords": [
-                "aws",
-                "amazon",
-                "amazon web services",
-            ],
+            "keywords": ["aws", "amazon", "amazon web services"],
+            "block": 'provider "aws" {\n  region = "eu-west-3"\n}',
         },
         "gcp": {
             "name": "google",
-            "keywords": [
-                "gcp",
-                "google cloud",
-            ],
+            "keywords": ["gcp", "google cloud", "google cloud platform"],
+            "block": 'provider "google" {\n  project = "my-project-id"\n  region  = "europe-west1"\n}',
+        },
+        "ovh": {
+            "name": "ovh",
+            "keywords": ["ovh", "ovhcloud", "ovh cloud"],
+            "block": (
+                'terraform {\n'
+                '  required_providers {\n'
+                '    ovh = {\n'
+                '      source  = "ovh/ovh"\n'
+                '      version = "~> 0.34"\n'
+                '    }\n'
+                '  }\n'
+                '}\n\n'
+                'provider "ovh" {\n'
+                '  endpoint = "ovh-eu"\n'
+                '}'
+            ),
         },
     }
 
@@ -210,7 +221,7 @@ class PseudoRAG:
         for _, provider in self.terraform_providers.items():
             for keyword in provider["keywords"]:
                 self.corpus["data"].append(keyword.lower())
-                self.corpus["provider"].append(provider["name"])
+                self.corpus["provider"].append(key)
 
         self.vectorizer = TfidfVectorizer()
         self.tfidf_matrix = self.vectorizer.fit_transform(self.corpus["data"])
@@ -218,18 +229,10 @@ class PseudoRAG:
     def get_messages(self, messages, user_prompt, meta):
         user_prompt_vector = self.vectorizer.transform([user_prompt])
         scores = cosine_similarity(user_prompt_vector, self.tfidf_matrix).tolist()[0]
-        max_score = max(scores)
-        max_score_index = scores.index(max_score)
-        provider_name = self.corpus["provider"][max_score_index]
+        provider_key = self.corpus["provider"][scores.index(max(scores))]
+        block = self.terraform_providers[provider_key]["block"]
 
-        message = {
-            "role": "assistant",
-            "content": f"""
-                    provider "{provider_name}" {{
-                        features {{}}
-                    }}""",
-        }
-
+        message = {"role": "assistant", "content": block}
         return messages + [message], False, meta
 
 
