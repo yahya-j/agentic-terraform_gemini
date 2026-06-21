@@ -121,6 +121,31 @@ The retry mechanism utilises `terraform validate -json` to verify IaC syntax and
 3. Create a feature branch
 4. Submit a pull request with detailed description
 
+# Principe Front/Back
+Back-end : Transformer main.py en petite API avec FastAPI — un seul endpoint /generate qui reçoit un prompt et renvoie le code Terraform
+Front-end : une page HTML simple avec un champ texte, un bouton, et une zone d'affichage du résultat
+
+## Étape 1 — Installer FastAPI
+cd ~/projets/agentic-terraform_gemini   # adaptez selon votre dossier
+source venv/bin/activate
+pip install fastapi uvicorn
+
+
+## Étape 2 — Créer le fichier de l'API back-end
+nano api.py
+### Ce que fait ce fichier, en clair
+
+/generate : le "guichet" où le front-end envoie le prompt et récupère le code Terraform
+/health : une route toute simple pour vérifier que le serveur tourne (pratique pour déboguer)
+CORSMiddleware : sans ça, le navigateur bloquerait les appels depuis votre page HTML par sécurité — c'est une autorisation explicite
+
+## Étape 3 — Lancer le serveur back-end
+uvicorn api:app --reload --port 8000
+
+## Étape 4 — Vérifier que ça tourne
+Dans un second terminal (laissez le premier tourner) :
+curl http://localhost:8000/health =====>>>> Vous devriez voir : {"status":"ok"}
+
 ## Licence
 
 Licensed under the [Mozilla Public License 2.0 (MPL-2.0)](https://www.mozilla.org/en-US/MPL/2.0/).
