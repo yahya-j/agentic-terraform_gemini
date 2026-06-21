@@ -1,0 +1,99 @@
+[0m[1mInitializing the backend...[0m
+[0m[1mInitializing provider plugins...[0m
+- Finding latest version of hashicorp/azurerm...
+- Installing hashicorp/azurerm v4.17.0...
+- Installed hashicorp/azurerm v4.17.0 (signed by HashiCorp)
+Terraform has created a lock file [1m.terraform.lock.hcl[0m to record the provider
+selections it made above. Include this file in your version control repository
+so that Terraform can guarantee to make the same selections by default when
+you run "terraform init" in the future.[0m
+
+[0m[1m[32mTerraform has been successfully initialized![0m[32m[0m
+[0m[32m
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.[0m
+[0m[1mInitializing the backend...[0m
+[0m[1mInitializing provider plugins...[0m
+- Finding latest version of hashicorp/azurerm...
+- Installing hashicorp/azurerm v4.17.0...
+- Installed hashicorp/azurerm v4.17.0 (signed by HashiCorp)
+Terraform has created a lock file [1m.terraform.lock.hcl[0m to record the provider
+selections it made above. Include this file in your version control repository
+so that Terraform can guarantee to make the same selections by default when
+you run "terraform init" in the future.[0m
+
+[0m[1m[32mTerraform has been successfully initialized![0m[32m[0m
+[0m[32m
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.[0m
+
+                    provider "azurerm" {
+                        features {}
+                    }
+
+                    resource "azurerm_resource_group" "rg" {
+                        name     = "my-resource-group"
+                        location = "westeurope"
+                    }
+
+                    resource "azurerm_virtual_machine" "vm" {
+                        count               = 3
+                        name                = "vm-${count.index + 1}"
+                        location            = azurerm_resource_group.rg.location
+                        resource_group_name = azurerm_resource_group.rg.name
+
+                        vm_size             = "Standard_F32s_v2"  # 32 vCPUs, 64GB RAM
+
+                        storage_os_disk {
+                            name              = "osdisk-${count.index + 1}"
+                            caching           = "ReadWrite"
+                            create_option     = "FromImage"
+                        }
+
+                        os_profile {
+                            computer_name     = "vm-${count.index + 1}"
+                            admin_username    = "azureuser"
+                        }
+
+                        network_interface_ids = [
+                            azurerm_network_interface.nic[count.index].id
+                        ]
+                    }
+
+                    resource "azurerm_network_interface" "nic" {
+                        count               = 3
+                        name                = "nic-${count.index + 1}"
+                        location            = azurerm_resource_group.rg.location
+                        resource_group_name = azurerm_resource_group.rg.name
+
+                        ip_configuration {
+                            name                          = "internal"
+                            subnet_id                     = azurerm_subnet.subnet[count.index].id
+                            private_ip_address_allocation = "Dynamic"
+                        }
+                    }
+
+                    resource "azurerm_virtual_network" "vnet" {
+                        name                = "my-vnet"
+                        address_space       = ["10.0.0.0/16"]
+                        location            = azurerm_resource_group.rg.location
+                        resource_group_name = azurerm_resource_group.rg.name
+                    }
+
+                    resource "azurerm_subnet" "subnet" {
+                        count                = 3
+                        name                 = "subnet-${count.index + 1}"
+                        resource_group_name  = azurerm_resource_group.rg.name
+                        virtual_network_name = azurerm_virtual_network.vnet.name
+                        address_prefixes     = ["10.0.${count.index + 1}.0/24"]
+                    }

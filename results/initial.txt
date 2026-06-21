@@ -1,0 +1,97 @@
+Here's a Terraform configuration to deploy 3 VMs across 3 availability zones in the Netherlands, with the specified CPU and memory requirements:
+
+```hcl
+provider "azurerm" {
+  features {}
+}
+
+# Define the resource group
+resource "azurerm_resource_group" "vm_rg" {
+  name     = "netherlands-high-performance-rg"
+  location = "westeurope"  # Closest Azure region to Netherlands
+}
+
+# Virtual Network
+resource "azurerm_virtual_network" "vnet" {
+  name                = "netherlands-vnet"
+  address_space       = ["10.0.0.0/16"]
+  location            = azurerm_resource_group.vm_rg.location
+  resource_group_name = azurerm_resource_group.vm_rg.name
+}
+
+# Subnets in different availability zones
+resource "azurerm_subnet" "subnets" {
+  count                = 3
+  name                 = "subnet-zone-${count.index + 1}"
+  resource_group_name  = azurerm_resource_group.vm_rg.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.0.${count.index + 1}.0/24"]
+}
+
+# Public IP for each VM
+resource "azurerm_public_ip" "public_ips" {
+  count               = 3
+  name                = "vm-public-ip-${count.index + 1}"
+  location            = azurerm_resource_group.vm_rg.location
+  resource_group_name = azurerm_resource_group.vm_rg.name
+  allocation_method   = "Static"
+  zones               = [count.index + 1]
+}
+
+# Network Interfaces
+resource "azurerm_network_interface" "nic" {
+  count               = 3
+  name                = "vm-nic-${count.index + 1}"
+  location            = azurerm_resource_group.vm_rg.location
+  resource_group_name = azurerm_resource_group.vm_rg.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.subnets[count.index].id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.public_ips[count.index].id
+  }
+}
+
+# Virtual Machines
+resource "azurerm_linux_virtual_machine" "vms" {
+  count               = 3
+  name                = "high-performance-vm-${count.index + 1}"
+  resource_group_name = azurerm_resource_group.vm_rg.name
+  location            = azurerm_resource_group.vm_rg.location
+  size                = "Standard_E16s_v4"  # 16 vCPUs, 128GB RAM
+  admin_username      = "adminuser"
+  zone                = count.index + 1
+
+  network_interface_ids = [
+    azurerm_network_interface.nic[count.index].id
+  ]
+
+  admin_ssh_key {
+    username   = "adminuser"
+    public_key = file("~/.ssh/id_rsa.pub")
+  }
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Premium_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "18.04-LTS"
+    version   = "latest"
+  }
+}
+
+# Optional: Security Group
+resource "azurerm_network_security_group" "nsg" {
+  name                = "netherlands-nsg"
+  location            = azurerm_resource_group.vm_rg.location
+  resource_group_name = azurerm_resource_group.vm_rg.name
+
+  security_rule {
+    name                       = "SSH"
+    priority                   = 1001
+    direction                  = "Inbound"
