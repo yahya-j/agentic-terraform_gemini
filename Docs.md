@@ -528,3 +528,103 @@ resource "ovh_cloud_project_instance_v2" "example_vm" {
   # Optional: For SSH key authentication
   # ssh_key_id = "your_ssh_key_id" # Replace with an existing SSH key ID in your project or create one with ovh_cloud_project_ssh_key
 }
+
+########
+[SecurityValidator] Aucun problème de sécurité détecté.
+[TerraformValidator] Tentative 1/6
+[TerraformValidator] terraform validate a échoué :
+The provider ovh/ovh does not support resource type "ovh_cloud_project_flavor".
+
+Did you intend to use the data source "ovh_cloud_project_flavor"? If so, declare this using a "data" block instead of a "resource" block.
+[SecurityValidator] Aucun problème de sécurité détecté.
+[TerraformValidator] Tentative 2/6
+[TerraformValidator] terraform validate a échoué :
+The argument "service_name" is required, but no definition was found.
+[SecurityValidator] Aucun problème de sécurité détecté.
+[TerraformValidator] Tentative 3/6
+[TerraformValidator] terraform validate a échoué :
+The argument "id" is required, but no definition was found.
+[SecurityValidator] Aucun problème de sécurité détecté.
+[TerraformValidator] Tentative 4/6
+[TerraformValidator] terraform validate a échoué :
+The argument "id" is required, but no definition was found.
+[SecurityValidator] Aucun problème de sécurité détecté.
+[TerraformValidator] Tentative 5/6
+[TerraformValidator] terraform validate a échoué :
+The argument "image_id" is required, but no definition was found.
+[SecurityValidator] Aucun problème de sécurité détecté.
+[TerraformValidator] Tentative 6/6
+[TerraformValidator] Nombre max de retries atteint. Abandon.
+=== Dernier Code généré ===
+terraform {
+  required_providers {
+    ovh = {
+      source  = "ovh/ovh"
+      version = "~> 2.0"
+    }
+  }
+}
+
+provider "ovh" {
+  endpoint = "ovh-eu"
+}
+
+variable "ovh_cloud_project_service_name" {
+  description = "The OVH Cloud project service_name (ID) where the instance will be deployed."
+  type        = string
+  # IMPORTANT: Replace this default with your actual OVH Public Cloud project ID.
+  # This ID usually looks like 'cloud-project-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'.
+  default     = "your_ovh_cloud_project_service_name_here" 
+}
+
+# Data source to find a suitable flavor (instance type) based on requirements
+# "b2-7" provides 2 vCores and 7GB RAM. This is the closest standard flavor
+# that matches or exceeds 4GB RAM without being too large, assuming 2 vCPUs are acceptable.
+# If "b2-7" is not available or you need exactly 4GB and 1vCPU, you might need to
+# search for other flavors or adjust based on OVH's current offerings in GRA1.
+# OVH flavor names are fixed and usually define CPU and RAM.
+data "ovh_cloud_project_flavor" "b2_7_flavor" {
+  service_name = var.ovh_cloud_project_service_name
+  name         = "b2-7"
+  region       = "GRA1" # Gravelines datacenter
+}
+
+# Data source to find the Ubuntu 22.04 image
+data "ovh_cloud_project_image" "ubuntu_22_04" {
+  service_name = var.ovh_cloud_project_service_name
+  name         = "Ubuntu 22.04"
+  region       = "GRA1"
+}
+
+# Resource to create the OVH Cloud Instance (VM)
+resource "ovh_cloud_project_instance" "vm" {
+  service_name = var.ovh_cloud_project_service_name
+  name         = "terraform-ovh-vm-gravelines"
+  region       = data.ovh_cloud_project_flavor.b2_7_flavor.region
+  flavor_id    = data.ovh_cloud_project_flavor.b2_7_flavor.id
+  image_id     = data.ovh_cloud_project_image.ubuntu_22_04.id
+
+  # It's highly recommended to assign an SSH key for access.
+  # You can either reference an existing key by name, or create one with Terraform.
+  # If you omit `key_pair_name`, you will need to rely on the VNC console
+  # or configure another access method manually after creation.
+
+  # Example: Using an existing SSH key (replace "my_existing_key" with your key's name in OVH)
+  # key_pair_name = "my_existing_key"
+
+  # Example: Generating a new SSH key and associating it
+  /*
+  resource "tls_private_key" "instance_ssh_key" {
+    algorithm = "RSA"
+    rsa_bits  = 4096
+  }
+
+  resource "ovh_cloud_project_ssh_key" "my_generated_key" {
+    service_name = var.ovh_cloud_project_service_name
+    name         = "terraform-generated-key-gravelines"
+    public_key   = tls_private_key.instance_ssh_key.public_key_openssh
+    region       = "GRA1"
+  }
+  key_pair_name = ovh_cloud_project_ssh_key.my_generated_key.name
+  */
+}
