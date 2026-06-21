@@ -32,8 +32,8 @@ Contains the core processing modules:
 
 1. Clone the repository:
    ```shell
-   git clone https://github.com/yahya-j/agentic-terraform_groq.git
-   cd agentic-terraform_groq
+   git clone https://github.com/yahya-j/agentic-terraform_gemini.git
+   cd agentic-terraform_gemini
    ```
 
 2. Set up the environment:
@@ -50,7 +50,7 @@ Contains the core processing modules:
    source venv/bin/activate
    which python     
    pip install --upgrade pip
-   pip install groq scikit-learn
+   pip install google-genai scikit-learn
 
    ```
 
@@ -58,22 +58,22 @@ Contains the core processing modules:
 
 1. Set your API key:
    ```shell
-   export GROQ_API_KEY=gsk_................
-   echo 'export GROQ_API_KEY=gsk_.....' >> ~/.bashrc
+   export GEMINI_API_KEY=AQ.Ab8RN6KMN3nLWGJxbo7XyaIwft8I_1rlg1nd6Izm_2nZ8eGBSg
+   echo 'export GEMINI_API_KEY=AQ.Ab8RN6KMN3nLWGJxbo7XyaIwft8I_1rlg1nd6Izm_2nZ8eGBSg' >> ~/.bashrc
    pip install --upgrade pip
-   pip install groq scikit-learn
+   pip install google-genai scikit-learn
    ```
 
-2. Run the example:
+2. Run the test:
    ```shell
    pipenv shell
-   python ./main.py
+   python test_gemini.py
    ```
 
 ## Example Implementation
 
 ```python
-import groq
+import google-genai
 from pipeline import Pipeline
 from steps import FewShot, LLMClient, PseudoRAG, TerraformValidator, UserPrompt
 
