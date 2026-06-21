@@ -58,8 +58,8 @@ Contains the core processing modules:
 
 1. Set your API key:
    ```shell
-   export GEMINI_API_KEY=AQ.Ab8RN6KMN3nLWGJxbo7XyaIwft8I_1rlg1nd6Izm_2nZ8eGBSg
-   echo 'export GEMINI_API_KEY=AQ.Ab8RN6KMN3nLWGJxbo7XyaIwft8I_1rlg1nd6Izm_2nZ8eGBSg' >> ~/.bashrc
+   export GEMINI_API_KEY=AQ..................
+   echo 'export GEMINI_API_KEY=AQ.................' >> ~/.bashrc
    pip install --upgrade pip
    pip install google-genai scikit-learn
    ```
