@@ -378,7 +378,7 @@ Tokens utilisés : cache_tokens_details=None cached_content_token_count=None can
                     output "public_ips" {
                         value = azurerm_public_ip.public_ip[*].ip_address
                     }
-###############################################################################################################################################""""
+#################################################################################################################################################
 # Début Niveau 1 : Ajout OVH
 Traceback (most recent call last):
   File "/mnt/c/Users/janna/projects/agentic-terraform_gemini/main.py", line 25, in <module>
@@ -388,3 +388,31 @@ Traceback (most recent call last):
     self.corpus["provider"].append(key)
                                    ^^^
 NameError: name 'key' is not defined
+
+==> Problème Indentation
+# Vérification de syntaxe avant de tester
+python -c "import ast; ast.parse(open('steps.py').read())" && echo "Syntaxe OK"
+
+###################################################################################################################################################
+# Étape 2 — Une fois corrigé, le test de détection isolé
+cat > test_pseudorag.py << 'EOF'
+from steps import PseudoRAG
+
+rag = PseudoRAG()
+
+prompts = [
+    "Deploy a VM on OVH Cloud in Strasbourg",
+    "Create a Kubernetes cluster on OVHcloud",
+    "Spin up a GCP Compute Engine instance",
+    "Deploy 3 VMs on Azure",
+    "Create an S3 bucket on AWS",
+]
+
+for p in prompts:
+    messages, retry, meta = rag.get_messages([], p, {})
+    print(f"Prompt: {p}")
+    print(f"→ {messages[-1]['content']}\n")
+EOF
+
+python test_pseudorag.py
+Ce test ne fait aucun appel API — uniquement du TF-IDF local, donc gratuit et instantané. Il vérifie que chaque prompt déclenche bien le bon bloc provider.
