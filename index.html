@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>agentic-terraform — Générateur d'infrastructure</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #171a23;
+    --border: #2a2e3a;
+    --text: #e4e6ec;
+    --text-muted: #8b8fa3;
+    --accent: #4361ee;
+    --accent-hover: #5a76f5;
+    --success: #1d9e75;
+    --error: #e24b4a;
+    --mono: "SF Mono", Consolas, "Courier New", monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 32px 16px;
+    line-height: 1.5;
+  }
+
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 13.5px;
+    margin: 0 0 28px;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  label {
+    display: block;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 84px;
+    background: #0c0e14;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    padding: 12px 14px;
+    resize: vertical;
+  }
+
+  textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  button:hover:not(:disabled) { background: var(--accent-hover); }
+
+  button:disabled {
+    background: var(--border);
+    color: var(--text-muted);
+    cursor: not-allowed;
+  }
+
+  .status {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .status.success { color: var(--success); }
+  .status.error { color: var(--error); }
+
+  .examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .example-chip {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+
+  .example-chip:hover {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  #result-panel { display: none; }
+
+  .result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .result-header h2 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .copy-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 12px;
+    padding: 5px 12px;
+  }
+
+  .copy-btn:hover {
+    border-color: var(--accent);
+    color: var(--text);
+    background: transparent;
+  }
+
+  pre {
+    background: #0c0e14;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.6;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .run-id {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Générateur d'infrastructure Terraform</h1>
+  <p class="subtitle">Décrivez l'infrastructure souhaitée en langage naturel — le code Terraform est généré et validé automatiquement.</p>
+
+  <div class="panel">
+    <label for="prompt-input">Description de l'infrastructure</label>
+    <textarea id="prompt-input" placeholder="Ex : Deploy a single VM on Azure with SSH key authentication"></textarea>
+
+    <div class="examples">
+      <button class="example-chip" type="button" data-prompt="Deploy a single VM on Azure with SSH key authentication">VM Azure + SSH</button>
+      <button class="example-chip" type="button" data-prompt="Create an S3 bucket on AWS with versioning enabled">S3 bucket AWS</button>
+      <button class="example-chip" type="button" data-prompt="Deploy a single VM on OVH Cloud with 4GB RAM in Gravelines">VM OVH Gravelines</button>
+    </div>
+
+    <div class="row">
+      <button id="generate-btn" type="button">Générer le code</button>
+      <div class="spinner" id="spinner"></div>
+      <span class="status" id="status-text"></span>
+    </div>
+  </div>
+
+  <div class="panel" id="result-panel">
+    <div class="result-header">
+      <h2>Code Terraform généré</h2>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="run-id" id="run-id"></span>
+        <button class="copy-btn" type="button" id="copy-btn">Copier</button>
+      </div>
+    </div>
+    <pre id="code-output"></pre>
+  </div>
+
+</div>
+
+<script>
+  const API_URL = "http://localhost:8000/generate";
+
+  const promptInput = document.getElementById("prompt-input");
+  const generateBtn = document.getElementById("generate-btn");
+  const spinner = document.getElementById("spinner");
+  const statusText = document.getElementById("status-text");
+  const resultPanel = document.getElementById("result-panel");
+  const codeOutput = document.getElementById("code-output");
+  const runIdLabel = document.getElementById("run-id");
+  const copyBtn = document.getElementById("copy-btn");
+
+  document.querySelectorAll(".example-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      promptInput.value = chip.dataset.prompt;
+      promptInput.focus();
+    });
+  });
+
+  async function generate() {
+    const prompt = promptInput.value.trim();
+    if (!prompt) {
+      statusText.textContent = "Veuillez décrire l'infrastructure souhaitée.";
+      statusText.className = "status error";
+      return;
+    }
+
+    generateBtn.disabled = true;
+    spinner.style.display = "inline-block";
+    statusText.textContent = "Génération en cours (cela peut prendre jusqu'à une minute)...";
+    statusText.className = "status";
+    resultPanel.style.display = "none";
+
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Le serveur a répondu avec le statut ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        statusText.textContent = data.message;
+        statusText.className = "status success";
+        codeOutput.textContent = data.terraform_code;
+        runIdLabel.textContent = `run ${data.run_id}`;
+        resultPanel.style.display = "block";
+      } else {
+        statusText.textContent = data.message;
+        statusText.className = "status error";
+      }
+    } catch (err) {
+      statusText.textContent = "Impossible de contacter le serveur. Vérifiez qu'il est bien lancé (uvicorn api:app --reload --port 8000).";
+      statusText.className = "status error";
+    } finally {
+      generateBtn.disabled = false;
+      spinner.style.display = "none";
+    }
+  }
+
+  generateBtn.addEventListener("click", generate);
+
+  promptInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      generate();
+    }
+  });
+
+  copyBtn.addEventListener("click", () => {
+    navigator.clipboard.writeText(codeOutput.textContent).then(() => {
+      copyBtn.textContent = "Copié !";
+      setTimeout(() => { copyBtn.textContent = "Copier"; }, 1500);
+    });
+  });
+</script>
+</body>
+</html>
