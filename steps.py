@@ -200,7 +200,7 @@ class PseudoRAG:
                 '  required_providers {\n'
                 '    ovh = {\n'
                 '      source  = "ovh/ovh"\n'
-                '      version = "~> 0.34"\n'
+                '      version = "~> 2.0"\n'
                 '    }\n'
                 '  }\n'
                 '}\n\n'
