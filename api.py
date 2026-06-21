@@ -69,7 +69,7 @@ def generate(request: GenerateRequest):
 
     try:
         result = pipeline.run(request.prompt)
-        save_run(run_dir, request.prompt, last_code, success=True)
+        save_run(run_dir, request.prompt, "", success=True)
         return GenerateResponse(
             success=True,
             terraform_code=result,
